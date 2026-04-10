@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+import random
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -10,6 +11,11 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, f1_score, classification_report
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
+from numpy import ndarray
 
 # Try making the code run on gpu, else run on cpu
 device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
@@ -110,6 +116,147 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
     df[numerical_cols] = df[numerical_cols].fillna(df[numerical_cols].median())
 
     return df
+
+def run_logistic_regression(
+        X_train: ndarray,
+        X_test: ndarray,
+        y_train: ndarray,
+        y_test: ndarray
+) -> LogisticRegression:
+    """
+    Trains and evaluates a Logistic Regression classifier.
+
+    Parameters:
+        X_train (ndarray): training features
+        X_test (ndarray): test features
+        y_train (ndarray): training labels
+        y_test (ndarray): test labels
+
+    Returns:
+        LogisticRegression: trained LogisticRegression instance
+    """
+    model = LogisticRegression(max_iter=1000)
+    model.fit(X_train, y_train)
+    predictions = model.predict(X_test)
+    target_names = ['Undrafted', 'Early Pick', 'Mid-Round', 'Late-Round']
+    print("Logistic Regression Classification Report:")
+    print(classification_report(y_test, predictions, target_names=target_names, zero_division=0))
+    print("\n")
+    return model
+
+def run_knn(
+        X_train: ndarray,
+        X_test: ndarray,
+        y_train: ndarray,
+        y_test: ndarray,
+        n_neighbors: int = 5
+) -> KNeighborsClassifier:
+    """
+    Trains and evaluates a K-Nearest Neighbors classifier.
+
+    Parameters:
+        X_train (ndarray): training features
+        X_test (ndarray): test features
+        y_train (ndarray): training labels
+        y_test (ndarray): test labels
+        n_neighbors (int): number of neighbors to use. Default is 5.
+
+    Returns:
+        KNeighborsClassifier: trained KNeighborsClassifier instance
+    """
+    model = KNeighborsClassifier(n_neighbors=n_neighbors)
+    model.fit(X_train, y_train)
+    predictions = model.predict(X_test)
+    target_names = ['Undrafted', 'Early Pick', 'Mid-Round', 'Late-Round']
+    print("KNeighbors Classification Report:")
+    print(classification_report(y_test, predictions, target_names=target_names, zero_division=0))
+    print("\n")
+    return model
+
+def run_svm(
+        X_train: ndarray,
+        X_test: ndarray,
+        y_train: ndarray,
+        y_test: ndarray,
+        kernel: str = 'rbf'
+) -> SVC:
+    """
+    Trains and evaluates a Support Vector Machine classifier.
+
+    Parameters:
+        X_train (ndarray): training features
+        X_test (ndarray): test features
+        y_train (ndarray): training labels
+        y_test (ndarray): test labels
+        kernel (str): kernel type to use ('linear', 'rbf', 'poly'). Default is 'rbf'.
+
+    Returns:
+        SVC: trained SVC instance
+    """
+    model = SVC(kernel=kernel)
+    model.fit(X_train, y_train)
+    predictions = model.predict(X_test)
+    target_names = ['Undrafted', 'Early Pick', 'Mid-Round', 'Late-Round']
+    print("SVC Classification Report:")
+    print(classification_report(y_test, predictions, target_names=target_names, zero_division=0))
+    print("\n")
+    return model
+
+def run_random_forest(
+        X_train: ndarray,
+        X_test: ndarray,
+        y_train: ndarray,
+        y_test: ndarray,
+        n_estimators: int = 100
+) -> RandomForestClassifier:
+    """
+    Trains and evaluates a Random Forest classifier.
+
+    Parameters:
+        X_train (ndarray): training features
+        X_test (ndarray): test features
+        y_train (ndarray): training labels
+        y_test (ndarray): test labels
+        n_estimators (int): number of trees in the forest. Default is 100.
+
+    Returns:
+        RandomForestClassifier: trained RandomForestClassifier instance
+    """
+    model = RandomForestClassifier(n_estimators=n_estimators, random_state=42)
+    model.fit(X_train, y_train)
+    predictions = model.predict(X_test)
+    target_names = ['Undrafted', 'Early Pick', 'Mid-Round', 'Late-Round']
+    print("Random Forest Classification Report:")
+    print(classification_report(y_test, predictions, target_names=target_names, zero_division=0))
+    print("\n")
+    return model
+
+def run_simple_models(df: pd.DataFrame, target_col: str) -> None:
+    """
+    Splits data once and runs all four classifiers on the same train/test sets.
+
+    Parameters:
+        df (pd.DataFrame): input dataframe
+        target_col (str): name of the target column
+
+    Returns:
+        None
+    """
+    X = df.drop(columns=[target_col])
+    y = df[target_col]
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X.values, y.values, test_size=0.2, stratify=y, random_state=42
+    )
+
+    scaler = StandardScaler()
+    X_train = scaler.fit_transform(X_train)
+    X_test = scaler.transform(X_test)
+
+    run_logistic_regression(X_train, X_test, y_train, y_test)
+    run_knn(X_train, X_test, y_train, y_test, n_neighbors=3)
+    run_svm(X_train, X_test, y_train, y_test, kernel='rbf')
+    run_random_forest(X_train, X_test, y_train, y_test, n_estimators=50)
 
 class FlexibleMLP(nn.Module):
     """
@@ -244,12 +391,17 @@ def final_project_pipeline():
     Run the final project
     """
 
+    # Seed to make results in report reproducible
+    random.seed(16)
+
     dataset_path = "../dataset/combine_data_since_2000_PROCESSED_2018-04-26.csv"
     combine_df = load_data(dataset_path)
     combine_df = preprocess_data(combine_df)
     combine_df.to_csv("../dataset/combine_data_since_2000_PROCESSED_2018-04-26_preprocessed.csv", index=False)
     visualize_feature_correlation(combine_df, combine_df.columns.tolist(), "../plots/combine_data_correlation.png")
     print(combine_df.head())
+    print("\n")
+    run_simple_models(combine_df, 'Draft_Position')
     run_mlp(combine_df, 'Draft_Position')
 
 
