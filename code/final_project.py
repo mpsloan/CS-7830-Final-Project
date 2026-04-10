@@ -28,28 +28,34 @@ def visualize_feature_correlation(df: pd.DataFrame, labels: list, plot_path: str
     plt.savefig(plot_path)
     plt.close()
 
-def update_round(round: float) -> int:
+def update_round(round_picked: float) -> int:
     """
     Update the round value based on specific criteria.
+
+    Args:
+        round_picked (float): The round the player was picked in.
+
+    Returns:
+        int: The updated round value.
     """
 
     # If there is no round, then they were undrafted, specify as 0
-    if np.isnan(round):
+    if np.isnan(round_picked):
         return 0
 
     # If the player was drafted in the first two rounds it is an early pick, specify as 1
-    elif round == 1 or round == 2:
+    elif round_picked == 1 or round_picked == 2:
         return 1
 
     # If the player was drafted in the 3rd or 4th rounds it is an mid-round pick, specify as 2
-    elif round == 3 or round == 4:
+    elif round_picked == 3 or round_picked == 4:
         return 2
 
     # If the player was drafted past the 4th round it is an late-round pick, specify as 3
     else:
         return 3
 
-def load_data(file_path:str) -> pd.DataFrame:
+def load_data(file_path: str) -> pd.DataFrame:
     """
     Load data from a CSV file into a pandas DataFrame.
     
@@ -64,12 +70,12 @@ def load_data(file_path:str) -> pd.DataFrame:
 
     return data
 
-def preprocess_data(df:pd.DataFrame) -> pd.DataFrame:
+def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
     """
     Preprocess the data by handling missing values and encoding categorical variables.
 
     Args:
-        data (pd.DataFrame): The input data to preprocess.
+        df (pd.DataFrame): The input data to preprocess.
 
     Returns:
         pd.DataFrame: The preprocessed data.
@@ -106,5 +112,7 @@ def final_project_pipeline():
     visualize_feature_correlation(combine_df, combine_df.columns.tolist(), "../plots/combine_data_correlation.png")
     print(combine_df.head())
 
+
 if __name__ == "__main__":
     final_project_pipeline()
+    
