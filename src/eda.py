@@ -7,7 +7,7 @@ def visualize_feature_correlation(df: pd.DataFrame, labels: list, plot_path: str
     Visualizes the correlation matrix of the DataFrame.
 
     Args:
-        df (pd.DataFrame): The input DataFrame.
+        df (pd.DataFrame): The preprocessed input DataFrame.
         labels (list): The labels for each sample.
         plot_path (str): The file path to save the plot.
     """
@@ -28,4 +28,10 @@ def visualize_feature_correlation(df: pd.DataFrame, labels: list, plot_path: str
     plt.close()
 
 def run_eda(df: pd.DataFrame):
+    """
+    Run the various EDA functions defined in this file that our project leverages
+
+    Args:
+        df (pd.DataFrame): The preprocessed DataFrame.
+    """
     visualize_feature_correlation(df, df.columns.tolist(), "plots/combine_data_correlation.png")

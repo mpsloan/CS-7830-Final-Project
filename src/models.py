@@ -27,7 +27,7 @@ def run_logistic_regression(
     """
     Trains and evaluates a Logistic Regression classifier.
 
-    Parameters:
+    Args:
         X_train (ndarray): training features
         X_test (ndarray): test features
         y_train (ndarray): training labels
@@ -56,7 +56,7 @@ def run_knn(
     """
     Trains and evaluates a K-Nearest Neighbors classifier.
 
-    Parameters:
+    Args:
         X_train (ndarray): training features
         X_test (ndarray): test features
         y_train (ndarray): training labels
@@ -86,7 +86,7 @@ def run_svm(
     """
     Trains and evaluates a Support Vector Machine classifier.
 
-    Parameters:
+    Args:
         X_train (ndarray): training features
         X_test (ndarray): test features
         y_train (ndarray): training labels
@@ -116,7 +116,7 @@ def run_random_forest(
     """
     Trains and evaluates a Random Forest classifier.
 
-    Parameters:
+    Args:
         X_train (ndarray): training features
         X_test (ndarray): test features
         y_train (ndarray): training labels
@@ -140,8 +140,8 @@ def run_simple_models(df: pd.DataFrame, target_col: str) -> None:
     """
     Splits data once and runs all four classifiers on the same train/test sets.
 
-    Parameters:
-        df (pd.DataFrame): input dataframe
+    Args:
+        df (pd.DataFrame): preprocessed input dataframe
         target_col (str): name of the target column
 
     Returns:
@@ -210,7 +210,7 @@ def run_mlp(df: pd.DataFrame, target_col: str) -> dict:
     Run the test on the given DataFrame.
 
     Args:
-        df (pd.DataFrame): The input DataFrame containing features and target.
+        df (pd.DataFrame): The preprocessed input DataFrame containing features and target.
         target_col (str): The name of the target column.
 
     Returns:
@@ -294,5 +294,11 @@ def run_mlp(df: pd.DataFrame, target_col: str) -> dict:
     return results
 
 def run_models(df: pd.DataFrame):
+    """
+    Run the various models defined in this file that our project leverages
+
+    Args:
+        df (pd.DataFrame): The preprocessed DataFrame.
+    """
     run_simple_models(df, 'Draft_Position')
     run_mlp(df, 'Draft_Position')

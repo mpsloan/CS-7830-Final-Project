@@ -74,6 +74,12 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 def run_preprocessing() -> pd.DataFrame:
+    """
+    Run the various models defined in this file that our project leverages
+
+    Returns:
+        df (pd.DataFrame): The preprocessed DataFrame.
+    """
     dataset_path = "dataset/combine_data_since_2000_PROCESSED_2018-04-26.csv"
     initial_combine_df = load_data(dataset_path)
     combine_df = preprocess_data(initial_combine_df)
