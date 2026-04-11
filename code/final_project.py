@@ -16,6 +16,7 @@ from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 from numpy import ndarray
 
+
 # Try making the code run on gpu, else run on cpu
 device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 
