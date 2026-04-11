@@ -12,6 +12,7 @@ import numpy as np
 from numpy import ndarray
 import pandas as pd
 
+
 # Try making the src run on gpu, else run on cpu
 device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 
