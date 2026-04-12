@@ -167,7 +167,7 @@ class FlexibleMLP(nn.Module):
     A flexible multi-layer perceptron (MLP) class that can adapt its architecture.
     """
 
-    def __init__(self, input_size, hidden_layers, num_classes):
+    def __init__(self, input_size, hidden_layers, num_classes, dropout_prob):
         """
         Initialize the FlexibleMLP model.
 
@@ -175,6 +175,7 @@ class FlexibleMLP(nn.Module):
             input_size (int): The number of input features.
             hidden_layers (list): A list containing the number of units in each hidden layer.
             num_classes (int): The number of output classes.
+            dropout_prob (float): The dropout probability for regularization.
         """
 
         super(FlexibleMLP, self).__init__()
@@ -184,6 +185,7 @@ class FlexibleMLP(nn.Module):
         for h_dim in hidden_layers:
             layers.append(nn.Linear(in_dim, h_dim))
             layers.append(nn.ReLU())
+            layers.append(nn.Dropout(dropout_prob))
             in_dim = h_dim
 
         layers.append(nn.Linear(in_dim, num_classes))
@@ -237,7 +239,8 @@ def run_mlp(df: pd.DataFrame, target_col: str) -> dict:
         [32],
         [64, 32],
         [128, 64, 32],
-        [100, 100]
+        [100, 100],
+        [128, 128, 128, 128]
     ]
 
     results = {}
@@ -249,19 +252,23 @@ def run_mlp(df: pd.DataFrame, target_col: str) -> dict:
         print(f" TESTING ARCHITECTURE: {arch}")
         print("!" * 50)
 
-        # Initialize FlexibleMLP (assumes the class is defined in your script)
-        model = FlexibleMLP(input_dim, arch, num_classes).to(device)
-        criterion = nn.CrossEntropyLoss()
+        model = FlexibleMLP(input_dim, arch, num_classes, dropout_prob=0.2).to(device)
+
+        # Give higher weight to classes with lower support
+        weights = torch.tensor([1.0, 2.2, 2.1, 1.7]).to(device)
+        criterion = nn.CrossEntropyLoss(weight=weights)
         optimizer = optim.Adam(model.parameters(), lr=0.001)
+        # scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=300, gamma=0.1)
 
         # Training Loop
         model.train()
-        for epoch in range(150):  # Increased slightly for better convergence
+        for epoch in range(250): 
             optimizer.zero_grad()
             outputs = model(X_train)
             loss = criterion(outputs, y_train)
             loss.backward()
             optimizer.step()
+            # scheduler.step()
 
         # Evaluation Mode
         model.eval()
