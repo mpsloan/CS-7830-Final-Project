@@ -1,9 +1,7 @@
 import random
-
 from src.preprocessing import run_preprocessing
 from src.eda import run_eda
 from src.models import run_models
-
 
 def final_project_pipeline():
     """
