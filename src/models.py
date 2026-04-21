@@ -18,30 +18,34 @@ from sklearn.preprocessing import label_binarize
 # Try making the src run on gpu, else run on cpu
 device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 
+# make PyTorch results reproducible as well
+torch.manual_seed(42)
+torch.mps.manual_seed(42) if torch.backends.mps.is_available() else None
+
 def run_random_forest(
-        df: pd.DataFrame,
-        target_col: str,
+        X_train: ndarray,
+        X_test: ndarray,
+        y_train: ndarray,
+        y_test: ndarray,
         n_estimators: int = 100,
 ):
     """
     Trains and evaluates a Random Forest classifier.
 
     Args:
-        df (pd.DataFrame): preprocessed input dataframe
-        target_col (str): name of the target column
+        X_train (ndarray): training features
+        X_test (ndarray): test features
+        y_train (ndarray): training labels
+        y_test (ndarray): test labels
         n_estimators (int): number of trees in the forest. Default is 100.
 
     """
-    X = df.drop(columns=[target_col])
-    y = df[target_col]
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X.values, y.values, test_size=0.2, stratify=y, random_state=42
-    )
-
+    # Scale data
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
+
+    # Run model and compute metrics
     model = RandomForestClassifier(n_estimators=n_estimators, random_state=42)
     model.fit(X_train, y_train)
     predictions = model.predict(X_test)
@@ -88,24 +92,21 @@ class FlexibleMLP(nn.Module):
         return self.network(x)
 
 
-def run_mlp(df: pd.DataFrame, target_col: str):
+def run_mlp(
+        X_train_raw: ndarray,
+        X_test_raw: ndarray,
+        y_train_raw: ndarray,
+        y_test_raw: ndarray
+):
     """
-    Run the test on the given DataFrame.
+    Trains and evaluates a FlexibleMLP across multiple architectures.
 
     Args:
-        df (pd.DataFrame): The preprocessed input DataFrame containing features and target.
-        target_col (str): The name of the target column.
-
+        X_train_raw (ndarray): raw training features, will be scaled and converted to tensors
+        X_test_raw (ndarray): raw test features, will be scaled and converted to tensors
+        y_train_raw (ndarray): raw training labels, will be converted to tensors
+        y_test_raw (ndarray): raw test labels, will be converted to tensors
     """
-
-    # Grab features and target
-    X = df.drop(columns=[target_col])
-    y = df[target_col]
-
-    # Split data
-    X_train_raw, X_test_raw, y_train_raw, y_test_raw = train_test_split(
-        X.values, y.values, test_size=0.2, stratify=y, random_state=42
-    )
 
     # Scale and move to GPU
     scaler = StandardScaler()
@@ -224,10 +225,18 @@ def compute_metrics(y_test: ndarray, predictions: ndarray, model_name: str) -> d
 
 def run_models(df: pd.DataFrame):
     """
-    Run the various models defined in this file that our project leverages
+    Splits data once and runs all models on the same train/test sets.
 
     Args:
         df (pd.DataFrame): The preprocessed DataFrame.
     """
-    run_random_forest(df, 'Draft_Position')
-    run_mlp(df, 'Draft_Position')
+    # Split the data once and pass the splits into the models
+    X = df.drop(columns=['Draft_Position'])
+    y = df['Draft_Position']
+
+    X_train_raw, X_test_raw, y_train_raw, y_test_raw = train_test_split(
+        X.values, y.values, test_size=0.2, stratify=y, random_state=42
+    )
+
+    run_random_forest(X_train_raw, X_test_raw, y_train_raw, y_test_raw)
+    run_mlp(X_train_raw, X_test_raw, y_train_raw, y_test_raw)
