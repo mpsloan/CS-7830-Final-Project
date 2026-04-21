@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 
-def visualize_feature_correlation(df: pd.DataFrame, labels: list, plot_path: str):
+def visualize_feature_correlation(df: pd.DataFrame, labels: list, plot_path: str) -> None:
     """
     Visualizes the correlation matrix of the DataFrame.
 
@@ -27,7 +27,7 @@ def visualize_feature_correlation(df: pd.DataFrame, labels: list, plot_path: str
     plt.savefig(plot_path)
     plt.close()
 
-def run_eda(df: pd.DataFrame):
+def run_eda(df: pd.DataFrame) -> None:
     """
     Run the various EDA functions defined in this file that our project leverages
 

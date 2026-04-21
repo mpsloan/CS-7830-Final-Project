@@ -3,10 +3,6 @@ import torch.nn as nn
 import torch.optim as optim
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score, f1_score, classification_report
-from sklearn.linear_model import LogisticRegression
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 import numpy as np
 from numpy import ndarray
@@ -28,7 +24,7 @@ def run_random_forest(
         y_train: ndarray,
         y_test: ndarray,
         n_estimators: int = 100,
-):
+) -> None:
     """
     Trains and evaluates a Random Forest classifier.
 
@@ -97,7 +93,7 @@ def run_mlp(
         X_test_raw: ndarray,
         y_train_raw: ndarray,
         y_test_raw: ndarray
-):
+) -> None:
     """
     Trains and evaluates a FlexibleMLP across multiple architectures.
 
@@ -223,7 +219,7 @@ def compute_metrics(y_test: ndarray, predictions: ndarray, model_name: str) -> d
     }
 
 
-def run_models(df: pd.DataFrame):
+def run_models(df: pd.DataFrame) -> None:
     """
     Splits data once and runs all models on the same train/test sets.
 
