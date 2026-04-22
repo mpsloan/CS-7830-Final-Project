@@ -55,7 +55,7 @@ def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
     """
 
     # Drop columns that are not needed
-    cols_to_drop = ['Player', 'Team', 'Pick', 'Pfr_ID', 'Year']
+    cols_to_drop = ['Player', 'Team', 'Pick', 'Pfr_ID', 'Year', 'AV']
     df.drop(columns=cols_to_drop, inplace=True)
 
     # Encode categorical variables

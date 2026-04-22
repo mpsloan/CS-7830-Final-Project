@@ -23,6 +23,7 @@ def run_random_forest(
         X_test: ndarray,
         y_train: ndarray,
         y_test: ndarray,
+        features: list,
         n_estimators: int = 100,
 ) -> None:
     """
@@ -33,7 +34,8 @@ def run_random_forest(
         X_test (ndarray): test features
         y_train (ndarray): training labels
         y_test (ndarray): test labels
-        n_estimators (int): number of trees in the forest. Default is 100.
+        features (list): A list containing the names of the features from the preprocessed dataframe
+        n_estimators (int): number of trees in the forest, default is 100
 
     """
     # Scale data
@@ -42,10 +44,16 @@ def run_random_forest(
     X_test = scaler.transform(X_test)
 
     # Run model and compute metrics
-    model = RandomForestClassifier(n_estimators=n_estimators, random_state=42)
+    model = RandomForestClassifier(n_estimators=n_estimators, random_state=42, class_weight='balanced')
     model.fit(X_train, y_train)
     predictions = model.predict(X_test)
     compute_metrics(y_test, predictions, "Random Forest")
+
+    # Print the most important features random forest is leveraging
+    importance_pairs = sorted(zip(features, model.feature_importances_), key=lambda x: x[1], reverse=True)
+    print("Random Forest Most Important Features: \n")
+    for name, score in importance_pairs:
+        print(f"{name}: {score:.2f}")
 
 class FlexibleMLP(nn.Module):
     """
@@ -229,10 +237,11 @@ def run_models(df: pd.DataFrame) -> None:
     # Split the data once and pass the splits into the models
     X = df.drop(columns=['Draft_Position'])
     y = df['Draft_Position']
+    features = X.columns.tolist()
 
     X_train_raw, X_test_raw, y_train_raw, y_test_raw = train_test_split(
         X.values, y.values, test_size=0.2, stratify=y, random_state=42
     )
 
-    run_random_forest(X_train_raw, X_test_raw, y_train_raw, y_test_raw)
+    run_random_forest(X_train_raw, X_test_raw, y_train_raw, y_test_raw, features)
     run_mlp(X_train_raw, X_test_raw, y_train_raw, y_test_raw)
