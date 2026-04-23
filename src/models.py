@@ -3,114 +3,29 @@ import torch.nn as nn
 import torch.optim as optim
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score, f1_score, classification_report
-from sklearn.linear_model import LogisticRegression
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 import numpy as np
 from numpy import ndarray
 import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.metrics import classification_report, roc_auc_score, roc_curve, auc, ConfusionMatrixDisplay, confusion_matrix
+from sklearn.preprocessing import label_binarize
 
 # Try making the src run on gpu, else run on cpu
 device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
 
-
-def run_logistic_regression(
-        X_train: ndarray,
-        X_test: ndarray,
-        y_train: ndarray,
-        y_test: ndarray
-) -> LogisticRegression:
-    """
-    Trains and evaluates a Logistic Regression classifier.
-
-    Args:
-        X_train (ndarray): training features
-        X_test (ndarray): test features
-        y_train (ndarray): training labels
-        y_test (ndarray): test labels
-
-    Returns:
-        LogisticRegression: trained LogisticRegression instance
-    """
-    model = LogisticRegression(max_iter=1000)
-    model.fit(X_train, y_train)
-    predictions = model.predict(X_test)
-    target_names = ['Undrafted', 'Early Pick', 'Mid-Round', 'Late-Round']
-    print("Logistic Regression Classification Report:")
-    print(classification_report(y_test, predictions, target_names=target_names, zero_division=0))
-    print("\n")
-    return model
-
-
-def run_knn(
-        X_train: ndarray,
-        X_test: ndarray,
-        y_train: ndarray,
-        y_test: ndarray,
-        n_neighbors: int = 5
-) -> KNeighborsClassifier:
-    """
-    Trains and evaluates a K-Nearest Neighbors classifier.
-
-    Args:
-        X_train (ndarray): training features
-        X_test (ndarray): test features
-        y_train (ndarray): training labels
-        y_test (ndarray): test labels
-        n_neighbors (int): number of neighbors to use. Default is 5.
-
-    Returns:
-        KNeighborsClassifier: trained KNeighborsClassifier instance
-    """
-    model = KNeighborsClassifier(n_neighbors=n_neighbors)
-    model.fit(X_train, y_train)
-    predictions = model.predict(X_test)
-    target_names = ['Undrafted', 'Early Pick', 'Mid-Round', 'Late-Round']
-    print("KNeighbors Classification Report:")
-    print(classification_report(y_test, predictions, target_names=target_names, zero_division=0))
-    print("\n")
-    return model
-
-
-def run_svm(
-        X_train: ndarray,
-        X_test: ndarray,
-        y_train: ndarray,
-        y_test: ndarray,
-        kernel: str = 'rbf'
-) -> SVC:
-    """
-    Trains and evaluates a Support Vector Machine classifier.
-
-    Args:
-        X_train (ndarray): training features
-        X_test (ndarray): test features
-        y_train (ndarray): training labels
-        y_test (ndarray): test labels
-        kernel (str): kernel type to use ('linear', 'rbf', 'poly'). Default is 'rbf'.
-
-    Returns:
-        SVC: trained SVC instance
-    """
-    model = SVC(kernel=kernel)
-    model.fit(X_train, y_train)
-    predictions = model.predict(X_test)
-    target_names = ['Undrafted', 'Early Pick', 'Mid-Round', 'Late-Round']
-    print("SVC Classification Report:")
-    print(classification_report(y_test, predictions, target_names=target_names, zero_division=0))
-    print("\n")
-    return model
-
+# make PyTorch results reproducible as well
+torch.manual_seed(42)
+torch.mps.manual_seed(42) if torch.backends.mps.is_available() else None
 
 def run_random_forest(
         X_train: ndarray,
         X_test: ndarray,
         y_train: ndarray,
         y_test: ndarray,
-        n_estimators: int = 100
-) -> RandomForestClassifier:
+        features: list,
+        n_estimators: int = 100,
+) -> None:
     """
     Trains and evaluates a Random Forest classifier.
 
@@ -119,48 +34,26 @@ def run_random_forest(
         X_test (ndarray): test features
         y_train (ndarray): training labels
         y_test (ndarray): test labels
-        n_estimators (int): number of trees in the forest. Default is 100.
+        features (list): A list containing the names of the features from the preprocessed dataframe
+        n_estimators (int): number of trees in the forest, default is 100
 
-    Returns:
-        RandomForestClassifier: trained RandomForestClassifier instance
     """
-    model = RandomForestClassifier(n_estimators=n_estimators, random_state=42)
-    model.fit(X_train, y_train)
-    predictions = model.predict(X_test)
-    target_names = ['Undrafted', 'Early Pick', 'Mid-Round', 'Late-Round']
-    print("Random Forest Classification Report:")
-    print(classification_report(y_test, predictions, target_names=target_names, zero_division=0))
-    print("\n")
-    return model
-
-
-def run_simple_models(df: pd.DataFrame, target_col: str) -> None:
-    """
-    Splits data once and runs all four classifiers on the same train/test sets.
-
-    Args:
-        df (pd.DataFrame): preprocessed input dataframe
-        target_col (str): name of the target column
-
-    Returns:
-        None
-    """
-    X = df.drop(columns=[target_col])
-    y = df[target_col]
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X.values, y.values, test_size=0.2, stratify=y, random_state=42
-    )
-
+    # Scale data
     scaler = StandardScaler()
     X_train = scaler.fit_transform(X_train)
     X_test = scaler.transform(X_test)
 
-    run_logistic_regression(X_train, X_test, y_train, y_test)
-    run_knn(X_train, X_test, y_train, y_test, n_neighbors=3)
-    run_svm(X_train, X_test, y_train, y_test, kernel='rbf')
-    run_random_forest(X_train, X_test, y_train, y_test, n_estimators=50)
+    # Run model and compute metrics
+    model = RandomForestClassifier(n_estimators=n_estimators, random_state=42, class_weight='balanced')
+    model.fit(X_train, y_train)
+    predictions = model.predict(X_test)
+    compute_metrics(y_test, predictions, "Random Forest")
 
+    # Print the most important features random forest is leveraging
+    importance_pairs = sorted(zip(features, model.feature_importances_), key=lambda x: x[1], reverse=True)
+    print("Random Forest Most Important Features: \n")
+    for name, score in importance_pairs:
+        print(f"{name}: {score:.2f}")
 
 class FlexibleMLP(nn.Module):
     """
@@ -203,26 +96,21 @@ class FlexibleMLP(nn.Module):
         return self.network(x)
 
 
-def run_mlp(df: pd.DataFrame, target_col: str) -> dict:
+def run_mlp(
+        X_train_raw: ndarray,
+        X_test_raw: ndarray,
+        y_train_raw: ndarray,
+        y_test_raw: ndarray
+) -> None:
     """
-    Run the test on the given DataFrame.
+    Trains and evaluates a FlexibleMLP across multiple architectures.
 
     Args:
-        df (pd.DataFrame): The preprocessed input DataFrame containing features and target.
-        target_col (str): The name of the target column.
-
-    Returns:
-        dict: A dictionary containing the results of the test.
+        X_train_raw (ndarray): raw training features, will be scaled and converted to tensors
+        X_test_raw (ndarray): raw test features, will be scaled and converted to tensors
+        y_train_raw (ndarray): raw training labels, will be converted to tensors
+        y_test_raw (ndarray): raw test labels, will be converted to tensors
     """
-
-    # Grab features and target
-    X = df.drop(columns=[target_col])
-    y = df[target_col]
-
-    # Split data
-    X_train_raw, X_test_raw, y_train_raw, y_test_raw = train_test_split(
-        X.values, y.values, test_size=0.2, stratify=y, random_state=42
-    )
 
     # Scale and move to GPU
     scaler = StandardScaler()
@@ -240,7 +128,6 @@ def run_mlp(df: pd.DataFrame, target_col: str) -> dict:
         [100, 100]
     ]
 
-    results = {}
     num_classes = len(np.unique(y_train_raw))
     input_dim = X_train.shape[1]
 
@@ -274,29 +161,87 @@ def run_mlp(df: pd.DataFrame, target_col: str) -> dict:
             y_true = y_test.cpu().numpy()
             y_pred = y_pred_tensor.cpu().numpy()
 
-            # Calculate Metrics
-            acc = accuracy_score(y_true, y_pred)
-            f1 = f1_score(y_true, y_pred, average='macro')
-
             print(f"\nFinal Training Loss: {loss.item():.4f}")
             print("-" * 30)
-            print(f"Test Accuracy: {acc:.4f}")
-            print(f"Macro F1-Score: {f1:.4f}")
-            print("-" * 30)
 
-            target_names = ['Undrafted', 'Early Pick', 'Mid-Round', 'Late-Round']
-            print(classification_report(y_true, y_pred, target_names=target_names, zero_division=0))
+            # Create string to display various architectures cleanly (filenames and console output)
+            arch_str = 'x'.join(map(str, arch))
+            compute_metrics(y_true, y_pred, f"MLP_{arch_str}")
 
-            results[str(arch)] = f1
-
-    return results
-
-def run_models(df: pd.DataFrame):
+def compute_metrics(y_test: ndarray, predictions: ndarray, model_name: str) -> dict:
     """
-    Run the various models defined in this file that our project leverages
+    Computes and displays evaluation metrics for our classification models.
+
+    Args:
+        y_test (ndarray): true labels
+        predictions (ndarray): predicted labels
+        model_name (str): name of the model for display purposes
+
+    Returns:
+        dict: dictionary containing macro_f1, weighted_f1, accuracy, and auc_roc
+    """
+    target_names = ['Undrafted', 'Early Pick', 'Mid-Round', 'Late-Round']
+    classes = [0, 1, 2, 3]
+
+    # Classification Report
+    print(f"\n{model_name} Classification Report:")
+    report = classification_report(y_test, predictions, target_names=target_names, zero_division=0, output_dict=True)
+    print(classification_report(y_test, predictions, target_names=target_names, zero_division=0))
+
+    # AUC-ROC (one-vs-rest for multiclass)
+    y_test_binarized = label_binarize(y_test, classes=classes)
+    predictions_binarized = label_binarize(predictions, classes=classes)
+    auc_roc = roc_auc_score(y_test_binarized, predictions_binarized, average='macro', multi_class='ovr')
+    print(f"Macro AUC-ROC: {auc_roc:.4f}")
+
+    # ROC Curve Plot (one curve per class)
+    fig, ax = plt.subplots(figsize=(8, 6))
+    for i, class_name in enumerate(target_names):
+        fpr, tpr, _ = roc_curve(y_test_binarized[:, i], predictions_binarized[:, i])
+        roc_auc = auc(fpr, tpr)
+        ax.plot(fpr, tpr, label=f"{class_name} (AUC = {roc_auc:.2f})")
+    ax.plot([0, 1], [0, 1], 'k--', label='Random Chance')
+    ax.set_xlabel('False Positive Rate')
+    ax.set_ylabel('True Positive Rate')
+    ax.set_title(f'{model_name} ROC Curve')
+    ax.legend(loc='lower right')
+    plt.tight_layout()
+    plt.savefig(f"plots/{model_name.lower().replace(' ', '_')}_roc_curve.png")
+    plt.close()
+
+    # Confusion Matrix Heatmap
+    cm = confusion_matrix(y_test, predictions)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=target_names)
+    fig, ax = plt.subplots(figsize=(8, 6))
+    disp.plot(ax=ax, cmap='Blues', colorbar=False)
+    ax.set_title(f'{model_name} Confusion Matrix')
+    plt.tight_layout()
+    plt.savefig(f"plots/{model_name.lower().replace(' ', '_')}_confusion_matrix.png")
+    plt.close()
+
+    return {
+        'accuracy': report['accuracy'],
+        'macro_f1': report['macro avg']['f1-score'],
+        'weighted_f1': report['weighted avg']['f1-score'],
+        'auc_roc': auc_roc
+    }
+
+
+def run_models(df: pd.DataFrame) -> None:
+    """
+    Splits data once and runs all models on the same train/test sets.
 
     Args:
         df (pd.DataFrame): The preprocessed DataFrame.
     """
-    run_simple_models(df, 'Draft_Position')
-    run_mlp(df, 'Draft_Position')
+    # Split the data once and pass the splits into the models
+    X = df.drop(columns=['Draft_Position'])
+    y = df['Draft_Position']
+    features = X.columns.tolist()
+
+    X_train_raw, X_test_raw, y_train_raw, y_test_raw = train_test_split(
+        X.values, y.values, test_size=0.2, stratify=y, random_state=42
+    )
+
+    run_random_forest(X_train_raw, X_test_raw, y_train_raw, y_test_raw, features)
+    run_mlp(X_train_raw, X_test_raw, y_train_raw, y_test_raw)
