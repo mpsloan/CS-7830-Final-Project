@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import (classification_report, roc_auc_score, roc_curve, auc, ConfusionMatrixDisplay, confusion_matrix,
                              accuracy_score, f1_score)
 from sklearn.preprocessing import label_binarize
+from sklearn.model_selection import GridSearchCV
 
 # Try making the src run on gpu, else run on cpu
 device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
@@ -54,10 +55,10 @@ def run_random_forest(
     compute_metrics(y_test, predictions, "Random Forest")
 
     # Print the most important features random forest is leveraging
-    importance_pairs = sorted(zip(features, model.feature_importances_), key=lambda x: x[1], reverse=True)
-    print("Random Forest Most Important Features: \n")
-    for name, score in importance_pairs:
-        print(f"{name}: {score:.2f}")
+    # importance_pairs = sorted(zip(features, model.feature_importances_), key=lambda x: x[1], reverse=True)
+    # print("Random Forest Most Important Features: \n")
+    # for name, score in importance_pairs:
+    #     print(f"{name}: {score:.2f}")
 
 class MLP(nn.Module):
     """
@@ -383,6 +384,29 @@ def run_models(df: pd.DataFrame) -> None:
         X.values, y.values, test_size=0.2, stratify=y, random_state=42
     )
 
+    # Simple Random Forest with base hyperparameters
     run_random_forest(X_train_raw, X_test_raw, y_train_raw, y_test_raw, features)
+
+    # Dictionary of Random Forest hyperparameters to test
+    param_grid = {
+        'n_estimators': [100, 200, 500],
+        'max_depth': [5, 10, 20, None],
+        'min_samples_split': [2, 5, 10],
+        'max_features': ['sqrt', 'log2']
+    }
+
+    # Automated hyperparameter tuning technique from scikit-learn
+    grid_search = GridSearchCV(
+        RandomForestClassifier(class_weight='balanced', random_state=42),
+        param_grid,
+        cv=3,
+        scoring='f1_macro',
+        n_jobs=-1
+    )
+    grid_search.fit(X_train_raw, y_train_raw)
+
+    print(grid_search.best_params_)
+    print(f"Best CV Macro F1: {grid_search.best_score_:.4f}")
+
     run_mlp(X_train_raw, X_test_raw, y_train_raw, y_test_raw)
     run_best_mlp(X_train_raw, X_test_raw, y_train_raw, y_test_raw, features)
