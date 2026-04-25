@@ -284,6 +284,7 @@ def run_best_mlp(
             current_f1 = f1_score(y_true, y_pred, average='macro')
             current_acc = accuracy_score(y_true, y_pred)
             current_report = classification_report(y_true, y_pred, target_names=['Undrafted', 'Early Pick', 'Mid-Round', 'Late-Round'], zero_division=0)
+            compute_metrics(y_true, y_pred, f"MLP_dif_params_{arch}")
 
             # Check if this is the best model 
             if current_f1 > best_f1:
