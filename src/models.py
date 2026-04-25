@@ -55,10 +55,13 @@ def run_random_forest(
     compute_metrics(y_test, predictions, "Random Forest")
 
     # Print the most important features random forest is leveraging
-    # importance_pairs = sorted(zip(features, model.feature_importances_), key=lambda x: x[1], reverse=True)
-    # print("Random Forest Most Important Features: \n")
-    # for name, score in importance_pairs:
-    #     print(f"{name}: {score:.2f}")
+    importance_pairs = sorted(zip(features, model.feature_importances_), key=lambda x: x[1], reverse=True)
+    print("\nRandom Forest Most Important Features:")
+    for name, score in importance_pairs:
+        print(f"{name}: {score:.2f}")
+
+    print("\nBase Random Forest Hyperparameters:")
+    print(RandomForestClassifier().get_params())
 
 class MLP(nn.Module):
     """
@@ -405,8 +408,17 @@ def run_models(df: pd.DataFrame) -> None:
     )
     grid_search.fit(X_train_raw, y_train_raw)
 
-    print(grid_search.best_params_)
-    print(f"Best CV Macro F1: {grid_search.best_score_:.4f}")
+    print("\nOptimized Random Forest Hyperparameters:")
+    best_params = grid_search.best_params_
+    print(best_params)
 
+    optimized_rf = RandomForestClassifier(
+        **best_params,
+        class_weight='balanced',
+        random_state=42
+    )
+    optimized_rf.fit(X_train_raw, y_train_raw)
+    predictions = optimized_rf.predict(X_test_raw)
+    compute_metrics(y_test_raw, predictions, "Random Forest Optimized Hyperparameters")
     run_mlp(X_train_raw, X_test_raw, y_train_raw, y_test_raw)
     run_best_mlp(X_train_raw, X_test_raw, y_train_raw, y_test_raw, features)
