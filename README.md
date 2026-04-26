@@ -1,5 +1,9 @@
 # CS-7830-Final-Project
 
+## Final Report
+
+Refer to `final_report.pdf` for the final report of this project. It will go over a description, final results, and next steps for this experiment.
+
 ## Requirements
  
 Install the required dependencies before running:
