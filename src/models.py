@@ -144,23 +144,20 @@ def run_mlp(
         print(f" TESTING ARCHITECTURE: {arch}")
         print("!" * 50)
 
-        model = MLP(input_dim, arch, num_classes, dropout_prob=0.2).to(device)
+        model = MLP(input_dim, arch, num_classes, dropout_prob=0.0).to(device)
 
         # Give higher weight to classes with lower support
-        weights = torch.tensor([1.0, 2.2, 2.1, 1.7]).to(device)
-        criterion = nn.CrossEntropyLoss(weight=weights)
+        criterion = nn.CrossEntropyLoss()
         optimizer = optim.Adam(model.parameters(), lr=0.001)
-        # scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=300, gamma=0.1)
 
         # Training Loop
         model.train()
-        for epoch in range(250): 
+        for epoch in range(150):  
             optimizer.zero_grad()
             outputs = model(X_train)
             loss = criterion(outputs, y_train)
             loss.backward()
             optimizer.step()
-            # scheduler.step()
 
         # Evaluation Mode
         model.eval()
