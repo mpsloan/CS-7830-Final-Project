@@ -37,7 +37,7 @@ This will execute the project models and save all outputs to the `plots/` direct
 │   └── combine_data_since_2000_PROCESSED_2018-04-26_preprocessed.csv # Cleaned data with encoded targets and scaled features
 │
 ├── final_project.py                                            # Main execution script to run training, evaluation, and plotting
-│
+├── final_report.pdf                                            # Our project final report
 ├── plots                                                       # Visualizations generated during model testing
 │   ├── combine_data_correlation.png                            # Heatmap showing relationships between features
 │   ├── mlp_100x100_confusion_matrix.png                        # Confusion Matrix for the [100, 100] architecture
